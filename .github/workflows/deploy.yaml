@@ -27,5 +27,3 @@ jobs:
 
       - name: lint
         run: make lint
-        env:
-          AWS_PROFILE: dennis-family
