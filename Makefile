@@ -8,7 +8,7 @@ STACK_NAME ?= daveved-spa
 TEMPLATE_FILE ?= website.yaml
 LANDING_BUCKET_NAME ?= daveved.com
 BLOG_BUCKET_NAME ?= blog.daveved.com
-PROFILE ?= dennis-family
+PROFILE ?= default
 REGION ?= us-east-1
 
 help:
