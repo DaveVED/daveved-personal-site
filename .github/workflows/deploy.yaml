@@ -7,12 +7,6 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-latest
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_DEFAULT_REGION: us-east-1
-      AWS_DEFAULT_OUTPUT: json
-      AWS_PROFILE: dennis-family
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -33,3 +27,5 @@ jobs:
 
       - name: lint
         run: make lint
+        env:
+          AWS_PROFILE: dennis-family
