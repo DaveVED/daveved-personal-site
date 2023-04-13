@@ -59,6 +59,28 @@ deploy-blog: get-s3-blog-url
 
 deploy: deploy-landing deploy-blog
 
+get-s3-landing-url:
+	@echo "Getting the landing URL..."
+	$(eval LANDING_URL=$(shell aws cloudformation describe-stacks --stack-name ${STACK_NAME} --query "Stacks[0].Outputs[?OutputKey=='LandingURL'].OutputValue" --output text --profile ${PROFILE} --region ${REGION}))
+	@echo "Landing URL: ${LANDING_URL}"
+
+deploy-landing: get-s3-landing-url
+	@echo "Uploading files to the S3 bucket..."
+	aws s3 cp src/landing/index.html s3://${LANDING_BUCKET_NAME}/index.html --profile ${PROFILE} --region ${REGION}
+	aws s3 cp src/landing/error.html s3://${LANDING_BUCKET_NAME}/error.html --profile ${PROFILE} --region ${REGION}
+
+get-s3-blog-url:
+	@echo "Getting the blog URL..."
+	$(eval BLOG_URL=$(shell aws cloudformation describe-stacks --stack-name ${STACK_NAME} --query "Stacks[0].Outputs[?OutputKey=='BlogURL'].OutputValue" --output text --profile ${PROFILE} --region ${REGION}))
+	@echo "Blog URL: ${BLOG_URL}"
+
+deploy-blog: get-s3-blog-url
+	@echo "Uploading files to the S3 bucket..."
+	aws s3 cp src/blog/index.html s3://${BLOG_BUCKET_NAME}/index.html --profile ${PROFILE} --region ${REGION}
+	aws s3 cp src/blog/error.html s3://${BLOG_BUCKET_NAME}/error.html --profile ${PROFILE} --region ${REGION}
+
+deploy-ci: deploy-landing deploy-blog
+
 destroy:
 	@echo "Deleting CloudFormation stack..."
 	aws cloudformation delete-stack \
