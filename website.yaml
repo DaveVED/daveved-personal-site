@@ -1,0 +1,71 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: AWS CloudFormation template to create two S3 buckets and configure them as static websites
+
+Parameters:
+  LandingBucketName:
+    Description: Name of the S3 bucket for the landing page
+    Type: String
+    MinLength: 3
+    MaxLength: 63
+
+  BlogBucketName:
+    Description: Name of the S3 bucket for the blog
+    Type: String
+    MinLength: 3
+    MaxLength: 63
+
+Resources:
+  LandingBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref LandingBucketName
+      AccessControl: PublicRead
+      WebsiteConfiguration:
+        IndexDocument: "index.html"
+        ErrorDocument: "error.html"
+
+  BlogBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref BlogBucketName
+      AccessControl: PublicRead
+      WebsiteConfiguration:
+        IndexDocument: "index.html"
+        ErrorDocument: "error.html"
+
+  LandingBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref LandingBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: PublicReadGetObject
+            Effect: Allow
+            Principal: "*"
+            Action:
+              - s3:GetObject
+            Resource: !Sub "arn:aws:s3:::${LandingBucket}/*"
+
+  BlogBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref BlogBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: PublicReadGetObject
+            Effect: Allow
+            Principal: "*"
+            Action:
+              - s3:GetObject
+            Resource: !Sub "arn:aws:s3:::${BlogBucket}/*"
+
+Outputs:
+  LandingURL:
+    Description: The URL of the landing page
+    Value: !Sub "http://${LandingBucket}.s3-website-${AWS::Region}.amazonaws.com"
+
+  BlogURL:
+    Description: The URL of the blog
+    Value: !Sub "http://${BlogBucket}.s3-website-${AWS::Region}.amazonaws.com"
