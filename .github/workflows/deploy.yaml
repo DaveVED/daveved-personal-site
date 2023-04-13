@@ -35,8 +35,12 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      - name: Deploy CloudFormation stack
-        run: aws cloudformation deploy --stack-name my-stack --template-file website.yaml --parameter-overrides BucketName=my-bucket
-
       - name: Deploy landing page
-        run: aws s3 cp index.html s3://my-bucket/index.html
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip
+          pip3 install awscli
+
+      - name: Deploy website
+        run: |
+          make deploy
