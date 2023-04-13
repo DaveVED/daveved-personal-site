@@ -1,5 +1,5 @@
 # daveved-personal-site
-![example workflow](https://github.com/daveved/daveved-personal-site/workflows/deploy.yml/badge.svg)
+![example workflow](https://github.com/daveved/daveved-personal-site/actions/workflows/deploy.yml/badge.svg)
 
 Components supporting [daveved.com](https://daveved.com). Simple pesonal blog hosted on AWS.
 
