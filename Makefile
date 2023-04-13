@@ -24,9 +24,7 @@ help:
 lint:
 	@echo "Validating CloudFormation template..."
 	aws cloudformation validate-template \
-		--template-body file://${TEMPLATE_FILE} \
-		--profile ${PROFILE} \
-		--region ${REGION}
+		--template-body file://${TEMPLATE_FILE}
 
 build:
 	@echo "Deploying CloudFormation stack..."
