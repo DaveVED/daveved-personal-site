@@ -7,13 +7,17 @@ Parameters:
     Type: String
     MinLength: 3
     MaxLength: 63
-
   BlogBucketName:
     Description: Name of the S3 bucket for the blog
     Type: String
     MinLength: 3
     MaxLength: 63
-
+  CertificateArn:
+    Description: The Amazon Resource Name (ARN) of the SSL certificate
+    Type: String
+  HostedZoneId:
+    Description: The hosted zone ID for the domain
+    Type: String
 Resources:
   LandingBucket:
     Type: AWS::S3::Bucket
@@ -23,7 +27,6 @@ Resources:
       WebsiteConfiguration:
         IndexDocument: "index.html"
         ErrorDocument: "error.html"
-
   BlogBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -32,7 +35,6 @@ Resources:
       WebsiteConfiguration:
         IndexDocument: "index.html"
         ErrorDocument: "error.html"
-
   LandingBucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
@@ -46,7 +48,6 @@ Resources:
             Action:
               - s3:GetObject
             Resource: !Sub "arn:aws:s3:::${LandingBucket}/*"
-
   BlogBucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
@@ -60,12 +61,81 @@ Resources:
             Action:
               - s3:GetObject
             Resource: !Sub "arn:aws:s3:::${BlogBucket}/*"
+  LandingCloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        DefaultRootObject: index.html
+        Aliases:
+          - "daveved.com"
+        ViewerCertificate:
+          AcmCertificateArn: !Ref CertificateArn
+          SslSupportMethod: sni-only
+        Origins:
+          - DomainName: !GetAtt LandingBucket.RegionalDomainName
+            Id: LandingBucketOrigin
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+        DefaultCacheBehavior:
+          TargetOriginId: LandingBucketOrigin
+          ViewerProtocolPolicy: redirect-to-https
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+  BlogCloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        DefaultRootObject: index.html
+        Aliases:
+          - "blog.daveved.com"
+        ViewerCertificate:
+          AcmCertificateArn: !Ref CertificateArn
+          SslSupportMethod: sni-only
+        Origins:
+          - DomainName: !GetAtt BlogBucket.RegionalDomainName
+            Id: BlogBucketOrigin
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+        DefaultCacheBehavior:
+          TargetOriginId: BlogBucketOrigin
+          ViewerProtocolPolicy: redirect-to-https
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+  LandingPageRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: "daveved.com."
+      Type: A
+      AliasTarget:
+        HostedZoneId: Z2FDTNDATAQYW2
+        DNSName: !GetAtt LandingCloudFrontDistribution.DomainName
+  BlogRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: "blog.daveved.com."
+      Type: A
+      AliasTarget:
+        HostedZoneId: Z2FDTNDATAQYW2
+        DNSName: !GetAtt BlogCloudFrontDistribution.DomainName
 
 Outputs:
-  LandingURL:
+  s3LandingURL:
     Description: The URL of the landing page
     Value: !Sub "http://${LandingBucket}.s3-website-${AWS::Region}.amazonaws.com"
-
-  BlogURL:
+  s3BlogURL:
     Description: The URL of the blog
     Value: !Sub "http://${BlogBucket}.s3-website-${AWS::Region}.amazonaws.com"
+  LandingURL:
+    Description: The URL of the landing page
+    Value: !GetAtt LandingCloudFrontDistribution.DomainName
+  BlogURL:
+    Description: The URL of the blog
+    Value: !GetAtt BlogCloudFrontDistribution.DomainName

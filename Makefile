@@ -10,6 +10,8 @@ LANDING_BUCKET_NAME ?= daveved.com
 BLOG_BUCKET_NAME ?= blog.daveved.com
 PROFILE ?= dennis-family
 REGION ?= us-east-1
+CERTIFICATE_ARN ?= arn:aws:acm:us-east-1:007794960432:certificate/c3b4772f-d2b3-4afe-94bc-436e5f80b11d
+HOSTED_ZONE_ID ?= Z0856937EHR519NX27W
 
 help:
 	@echo "Available targets:"
@@ -31,11 +33,11 @@ build:
 	aws cloudformation deploy \
 		--stack-name ${STACK_NAME} \
 		--template-file ${TEMPLATE_FILE} \
-		--parameter-overrides LandingBucketName=${LANDING_BUCKET_NAME} BlogBucketName=${BLOG_BUCKET_NAME}
+		--parameter-overrides LandingBucketName=${LANDING_BUCKET_NAME} BlogBucketName=${BLOG_BUCKET_NAME} CertificateArn=${CERTIFICATE_ARN} HostedZoneId=${HOSTED_ZONE_ID}
 
 get-s3-landing-url:
 	@echo "Getting the landing URL..."
-	$(eval LANDING_URL=$(shell aws cloudformation describe-stacks --stack-name ${STACK_NAME} --query "Stacks[0].Outputs[?OutputKey=='LandingURL'].OutputValue" --output text))
+	$(eval LANDING_URL=$(shell aws cloudformation describe-stacks --stack-name ${STACK_NAME} --query "Stacks[0].Outputs[?OutputKey=='s3LandingURL'].OutputValue" --output text))
 	@echo "Landing URL: ${LANDING_URL}"
 
 deploy-landing: get-s3-landing-url
@@ -45,7 +47,7 @@ deploy-landing: get-s3-landing-url
 
 get-s3-blog-url:
 	@echo "Getting the blog URL..."
-	$(eval BLOG_URL=$(shell aws cloudformation describe-stacks --stack-name ${STACK_NAME} --query "Stacks[0].Outputs[?OutputKey=='BlogURL'].OutputValue" --output text))
+	$(eval BLOG_URL=$(shell aws cloudformation describe-stacks --stack-name ${STACK_NAME} --query "Stacks[0].Outputs[?OutputKey=='s3BlogURL'].OutputValue" --output text))
 	@echo "Blog URL: ${BLOG_URL}"
 
 deploy-blog: get-s3-blog-url
