@@ -54,6 +54,7 @@ deploy-blog: get-s3-blog-url
 	@echo "Uploading files to the S3 bucket..."
 	aws s3 cp src/blog/index.html s3://${BLOG_BUCKET_NAME}/index.html
 	aws s3 cp src/blog/error.html s3://${BLOG_BUCKET_NAME}/error.html
+	aws s3 cp src/blog/content/deploy-a-custom-site-using-s3-&-cloudfront-in-minutes.html s3://${BLOG_BUCKET_NAME}/content/deploy-a-custom-site-using-s3-&-cloudfront-in-minutes.html
 
 deploy: deploy-landing deploy-blog
 
