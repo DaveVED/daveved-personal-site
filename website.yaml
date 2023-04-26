@@ -2,13 +2,8 @@ AWSTemplateFormatVersion: "2010-09-09"
 Description: AWS CloudFormation template to create two S3 buckets and configure them as static websites
 
 Parameters:
-  LandingBucketName:
-    Description: Name of the S3 bucket for the landing page
-    Type: String
-    MinLength: 3
-    MaxLength: 63
-  BlogBucketName:
-    Description: Name of the S3 bucket for the blog
+  ReactAppBucketName:
+    Description: Name of the S3 bucket for the React app
     Type: String
     MinLength: 3
     MaxLength: 63
@@ -19,49 +14,33 @@ Parameters:
     Description: The hosted zone ID for the domain
     Type: String
 Resources:
-  LandingBucket:
+  ReactAppBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Ref LandingBucketName
-      AccessControl: PublicRead
+      BucketName: !Ref ReactAppBucketName
       WebsiteConfiguration:
         IndexDocument: "index.html"
-        ErrorDocument: "error.html"
-  BlogBucket:
-    Type: AWS::S3::Bucket
+        ErrorDocument: "index.html"
+  S3OriginAccessIdentity:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
     Properties:
-      BucketName: !Ref BlogBucketName
-      AccessControl: PublicRead
-      WebsiteConfiguration:
-        IndexDocument: "index.html"
-        ErrorDocument: "error.html"
-  LandingBucketPolicy:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: Access Identity for React App Bucket
+  ReactAppBucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
-      Bucket: !Ref LandingBucket
+      Bucket: !Ref ReactAppBucket
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
-          - Sid: PublicReadGetObject
+          - Sid: GrantCloudFrontAccess
             Effect: Allow
-            Principal: "*"
+            Principal:
+              CanonicalUser: !GetAtt S3OriginAccessIdentity.S3CanonicalUserId
             Action:
               - s3:GetObject
-            Resource: !Sub "arn:aws:s3:::${LandingBucket}/*"
-  BlogBucketPolicy:
-    Type: AWS::S3::BucketPolicy
-    Properties:
-      Bucket: !Ref BlogBucket
-      PolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Sid: PublicReadGetObject
-            Effect: Allow
-            Principal: "*"
-            Action:
-              - s3:GetObject
-            Resource: !Sub "arn:aws:s3:::${BlogBucket}/*"
-  LandingCloudFrontDistribution:
+            Resource: !Sub "arn:${AWS::Partition}:s3:::${ReactAppBucket}/*"
+  ReactAppCloudFrontDistribution:
     Type: AWS::CloudFront::Distribution
     Properties:
       DistributionConfig:
@@ -73,41 +52,18 @@ Resources:
           AcmCertificateArn: !Ref CertificateArn
           SslSupportMethod: sni-only
         Origins:
-          - DomainName: !GetAtt LandingBucket.RegionalDomainName
-            Id: LandingBucketOrigin
+          - DomainName: !GetAtt ReactAppBucket.RegionalDomainName
+            Id: ReactAppBucketOrigin
             S3OriginConfig:
-              OriginAccessIdentity: ""
+              OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${S3OriginAccessIdentity}"
         DefaultCacheBehavior:
-          TargetOriginId: LandingBucketOrigin
+          TargetOriginId: ReactAppBucketOrigin
           ViewerProtocolPolicy: redirect-to-https
           ForwardedValues:
             QueryString: false
             Cookies:
               Forward: none
-  BlogCloudFrontDistribution:
-    Type: AWS::CloudFront::Distribution
-    Properties:
-      DistributionConfig:
-        Enabled: true
-        DefaultRootObject: index.html
-        Aliases:
-          - "blog.daveved.com"
-        ViewerCertificate:
-          AcmCertificateArn: !Ref CertificateArn
-          SslSupportMethod: sni-only
-        Origins:
-          - DomainName: !GetAtt BlogBucket.RegionalDomainName
-            Id: BlogBucketOrigin
-            S3OriginConfig:
-              OriginAccessIdentity: ""
-        DefaultCacheBehavior:
-          TargetOriginId: BlogBucketOrigin
-          ViewerProtocolPolicy: redirect-to-https
-          ForwardedValues:
-            QueryString: false
-            Cookies:
-              Forward: none
-  LandingPageRecord:
+  ReactAppRecord:
     Type: AWS::Route53::RecordSet
     Properties:
       HostedZoneId: !Ref HostedZoneId
@@ -115,27 +71,12 @@ Resources:
       Type: A
       AliasTarget:
         HostedZoneId: Z2FDTNDATAQYW2
-        DNSName: !GetAtt LandingCloudFrontDistribution.DomainName
-  BlogRecord:
-    Type: AWS::Route53::RecordSet
-    Properties:
-      HostedZoneId: !Ref HostedZoneId
-      Name: "blog.daveved.com."
-      Type: A
-      AliasTarget:
-        HostedZoneId: Z2FDTNDATAQYW2
-        DNSName: !GetAtt BlogCloudFrontDistribution.DomainName
+        DNSName: !GetAtt ReactAppCloudFrontDistribution.DomainName
 
 Outputs:
-  s3LandingURL:
-    Description: The URL of the landing page
-    Value: !Sub "http://${LandingBucket}.s3-website-${AWS::Region}.amazonaws.com"
-  s3BlogURL:
-    Description: The URL of the blog
-    Value: !Sub "http://${BlogBucket}.s3-website-${AWS::Region}.amazonaws.com"
-  LandingURL:
-    Description: The URL of the landing page
-    Value: !GetAtt LandingCloudFrontDistribution.DomainName
-  BlogURL:
-    Description: The URL of the blog
-    Value: !GetAtt BlogCloudFrontDistribution.DomainName
+  s3ReactAppURL:
+    Description: The URL of the React app
+    Value: !Sub "http://${ReactAppBucket}.s3-website-${AWS::Region}.amazonaws.com"
+  ReactAppURL:
+    Description: The URL of the React app
+    Value: !GetAtt ReactAppCloudFrontDistribution.DomainName
