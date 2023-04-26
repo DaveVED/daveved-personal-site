@@ -30,7 +30,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd daveved-ui
-          npm install
+          npm install --force
 
       - name: Deploy
         run: |
