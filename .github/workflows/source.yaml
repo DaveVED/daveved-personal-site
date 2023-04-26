@@ -25,6 +25,11 @@ jobs:
           sudo apt-get install -y python3-pip
           pip3 install awscli
 
+      - name: Install dependencies
+        run: |
+          cd daveved-ui
+          npm install
+
       - name: deploy
         run: |
           make deploy
